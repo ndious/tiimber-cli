@@ -100,6 +100,21 @@ class ProjectCommand extends Command
     file_put_contents($composerPath, json_encode($composer, JSON_OPTIONS));
   }
 
+  private function createIndex($dir)
+  {
+    $content = <<<OEF
+<?php
+
+require __DIR__.'/vendor/autoload.php';
+
+$application = new \Tiimber\Application();
+
+$application->setBaseDir(__DIR__);
+$application->start();
+OEF;
+    file_put_contents($dir . DIRECTORY_SEPARATOR . 'index.php', $content);
+  }
+
   protected function execute(InputInterface $input, OutputInterface $output)
   {
     $dir = Application::getBaseDir();
@@ -109,6 +124,8 @@ class ProjectCommand extends Command
     $this->createConfig($dir, $input->getArgument('name'));
 
     $this->updateComposer($dir, $input->getArgument('name'));
+
+    $this->createIndex($dir);
 
     $output->writeln('<fg=green>Project ' . $input->getArgument('name') . ' created.</>');
   }
