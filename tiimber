@@ -1,0 +1,15 @@
+#!/usr/bin/env php
+<?php
+
+require __DIR__.'/vendor/autoload.php';
+
+use Tiimber\Cli\Generate;
+use Tiimber\Cli\Application;
+
+define('JSON_OPTIONS', JSON_PRETTY_PRINT + JSON_UNESCAPED_SLASHES);
+
+$application = new Application();
+$application->setBaseDir(__DIR__);
+$application->add(new Generate\ProjectCommand());
+$application->add(new Generate\ControllerCommand());
+$application->run();
