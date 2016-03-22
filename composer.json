@@ -1,5 +1,5 @@
 {
-    "name": "ndufreche/tiimber-cmd",
+    "name": "ndufreche/tiimber-cli",
     "description": "Tiimber commande line tools",
     "type": "cmd",
     "require": {
