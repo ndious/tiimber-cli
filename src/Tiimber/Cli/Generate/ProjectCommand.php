@@ -4,7 +4,7 @@ namespace Tiimber\Cli\Generate;
 
 use stdClass;
 
-use Tiimber\Cli\Application;
+use Tiimber\Cli\PathResolver;
 
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
@@ -27,40 +27,40 @@ class ProjectCommand extends Command
     ;
   }
 
-  private function createFolders($dir, $name)
+  private function createFolders($name)
   {
-    $appDir = $dir . DIRECTORY_SEPARATOR . 'Application' . DIRECTORY_SEPARATOR . ucfirst($name);
-    $resourceDir = $dir . DIRECTORY_SEPARATOR . 'Resources';
+    $appDir = (new PathResolver())->getAppDir() . ucfirst($name) . DIRECTORY_SEPARATOR;
+    $resourceDir = (new PathResolver())->getResourceDir();
 
-    mkdir($dir . DIRECTORY_SEPARATOR . 'Application');
+    mkdir((new PathResolver())->getAppDir());
+    
     mkdir($appDir);
+    mkdir($appDir . 'Controllers');
+    mkdir($appDir . 'Models');
+    mkdir($appDir . 'Tables');
 
-    mkdir($appDir . DIRECTORY_SEPARATOR . 'Controllers');
-    mkdir($appDir . DIRECTORY_SEPARATOR . 'Models');
-    mkdir($appDir . DIRECTORY_SEPARATOR . 'Tables');
+    touch($appDir . 'Controllers' . DIRECTORY_SEPARATOR . '.gitkeep');
+    touch($appDir . 'Models' . DIRECTORY_SEPARATOR . '.gitkeep');
+    touch($appDir . 'Tables' . DIRECTORY_SEPARATOR . '.gitkeep');
 
-    touch($appDir . DIRECTORY_SEPARATOR . 'Controllers' . DIRECTORY_SEPARATOR . '.gitkeep');
-    touch($appDir . DIRECTORY_SEPARATOR . 'Models' . DIRECTORY_SEPARATOR . '.gitkeep');
-    touch($appDir . DIRECTORY_SEPARATOR . 'Tables' . DIRECTORY_SEPARATOR . '.gitkeep');
-
-    mkdir($dir . DIRECTORY_SEPARATOR . 'Config');
+    mkdir((new PathResolver())->getConfDir());
 
     mkdir($resourceDir);
-    mkdir($resourceDir . DIRECTORY_SEPARATOR . 'images');
-    mkdir($resourceDir . DIRECTORY_SEPARATOR . 'javascript');
-    mkdir($resourceDir . DIRECTORY_SEPARATOR . 'stylesheet');
+    mkdir($resourceDir . 'images');
+    mkdir($resourceDir . 'javascript');
+    mkdir($resourceDir . 'stylesheet');
 
-    touch($resourceDir . DIRECTORY_SEPARATOR . 'images' . DIRECTORY_SEPARATOR . '.gitkeep');
-    touch($resourceDir . DIRECTORY_SEPARATOR . 'javascript' . DIRECTORY_SEPARATOR . '.gitkeep');
-    touch($resourceDir . DIRECTORY_SEPARATOR . 'stylesheet' . DIRECTORY_SEPARATOR . '.gitkeep');
+    touch($resourceDir . 'images' . DIRECTORY_SEPARATOR . '.gitkeep');
+    touch($resourceDir . 'javascript' . DIRECTORY_SEPARATOR . '.gitkeep');
+    touch($resourceDir . 'stylesheet' . DIRECTORY_SEPARATOR . '.gitkeep');
 
-    mkdir($dir . DIRECTORY_SEPARATOR . 'Templates');
-    touch($dir . DIRECTORY_SEPARATOR . 'Templates' . DIRECTORY_SEPARATOR . '.gitkeep');
+    mkdir((new PathResolver())->getTplDir());
+    touch((new PathResolver())->getTplDir() . DIRECTORY_SEPARATOR . '.gitkeep');
   }
 
-  private function createConfig($dir, $name)
+  private function createConfig($name)
   {
-    $confiDir = $dir . DIRECTORY_SEPARATOR . 'Config' . DIRECTORY_SEPARATOR;
+    $confiDir = (new PathResolver())->getConfDir();
     $database = [
       'host' => 'localhost',
       'dbname' => $name,
@@ -78,13 +78,13 @@ class ProjectCommand extends Command
     file_put_contents($confiDir . 'helpers.json', json_encode($helpers, JSON_OPTIONS));
     file_put_contents($confiDir . 'drivers.json', '{}');
 
-    mkdir($confiDir . 'routes');
-    touch($confiDir . 'routes' . DIRECTORY_SEPARATOR . '.gitkeep');
+    mkdir((new PathResolver())->getRouteDir());
+    touch((new PathResolver())->getRouteDir() . '.gitkeep');
   }
 
-  private function updateComposer($dir, $name)
+  private function updateComposer($name)
   {
-    $composerPath = $dir . DIRECTORY_SEPARATOR . 'composer.json';
+    $composerPath = (new PathResolver())->getRootDir() . 'composer.json';
     $composer = file_get_contents($composerPath);
     $composer = json_decode($composer);
 
@@ -100,7 +100,7 @@ class ProjectCommand extends Command
     file_put_contents($composerPath, json_encode($composer, JSON_OPTIONS));
   }
 
-  private function createIndex($dir)
+  private function createIndex()
   {
     $content = <<<'EOS'
 <?php
@@ -113,28 +113,26 @@ $application->setBaseDir(__DIR__);
 $application->start();
 
 EOS;
-    file_put_contents($dir . DIRECTORY_SEPARATOR . 'index.php', $content);
+    file_put_contents((new PathResolver())->getRootDir() . 'index.php', $content);
   }
 
   protected function execute(InputInterface $input, OutputInterface $output)
   {
-    $dir = Application::getBaseDir();
-
     $output->write('<fg=yellow>Project structure</>');
-    $this->createFolders($dir, $input->getArgument('name'));
+    $this->createFolders($input->getArgument('name'));
     $output->writeln('<fg=green> created.</>');
 
     $output->write('<fg=yellow>Project config</>');
-    $this->createConfig($dir, $input->getArgument('name'));
+    $this->createConfig($input->getArgument('name'));
     $output->writeln('<fg=green> created.</>');
 
 
     $output->write('<fg=yellow>Project index</>');
-    $this->createIndex($dir);
+    $this->createIndex();
     $output->writeln('<fg=green> created.</>');
     
     $output->write('<fg=yellow>composer.json</>');
-    $this->updateComposer($dir, $input->getArgument('name'));
+    $this->updateComposer($input->getArgument('name'));
     $output->writeln('<fg=green> updated.</>');
 
 

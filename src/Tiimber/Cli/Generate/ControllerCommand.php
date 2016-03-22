@@ -4,7 +4,7 @@ namespace Tiimber\Cli\Generate;
 
 use Exception;
 
-use Tiimber\Cli\Application;
+use Tiimber\Cli\PathResolver;
 
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
@@ -33,9 +33,9 @@ class ControllerCommand extends Command
     ;
   }
 
-  private function createController($dir, $name, $project = null)
+  private function createController($name, $project)
   {
-    $controllerDir = $dir . $project . DIRECTORY_SEPARATOR . 'Controllers' . DIRECTORY_SEPARATOR;
+    $controllerDir = (new PathResolver())->getAppDir() . $project . DIRECTORY_SEPARATOR . 'Controllers' . DIRECTORY_SEPARATOR;
 
     $controllerContent = <<<'EOS'
 <?php
@@ -54,22 +54,22 @@ EOS;
     file_put_contents($controllerDir . ucfirst($name) . 'Controller.php', $controllerContent);
   }
 
-  private function createTemplateFolder($dir, $name)
+  private function createTemplateFolder($name)
   {
-    $templateDir = $dir . DIRECTORY_SEPARATOR . 'Templates' . DIRECTORY_SEPARATOR . $name;
+    $templateDir = (new PathResolver())->getTplDir() . $name;
     mkdir($templateDir);
     touch($templateDir . DIRECTORY_SEPARATOR . '.gitkeep');
   }
 
-  private function createConfigFile($dir, $name)
+  private function createConfigFile($name)
   {
-    $configPath = $dir . DIRECTORY_SEPARATOR . 'Config' . DIRECTORY_SEPARATOR . 'routes' . DIRECTORY_SEPARATOR . $name . '.json';
+    $configPath = (new PathResolver())->getRouteDir() . $name . '.json';
     file_put_contents($configPath, '{}');
   }
 
-  private function declareController($dir, $controller, $project)
+  private function declareController($controller, $project)
   {
-    $filePath = $dir .DIRECTORY_SEPARATOR . 'Config' . DIRECTORY_SEPARATOR . 'controllers.json';
+    $filePath = (new PathResolver())->getConfDir() . 'controllers.json';
     $content = json_decode(file_get_contents($filePath));
     if (isset($content->$controller)) {
       throw new Exception('Controller already declared');
@@ -80,7 +80,7 @@ EOS;
 
   protected function execute(InputInterface $input, OutputInterface $output)
   {
-    $appDir = Application::getBaseDir() . DIRECTORY_SEPARATOR . 'Application' . DIRECTORY_SEPARATOR;
+    $appDir = (new PathResolver())->getAppDir();
 
     if (!is_null($input->getOption('project')) && !is_dir($appDir . ucfirst($input->getOption('project')))) {
       return $output->writeln('<fg=red>Run command "tiimber generate:project ' . $input->getOption('project') . '" first.</>');
@@ -94,20 +94,14 @@ EOS;
     }
     $project = $input->getOption('project');
     if (is_null($project)) {
-      $folders = scandir($appDir);
-      foreach ($folders as $folder) {
-        if (!in_array($folder, ['.', '..']) && is_dir($appDir . DIRECTORY_SEPARATOR . $folder)) {
-          $project = $folder;
-          break;
-        }
-      }
+      $project = (new PathResolver)->resolveProjectName();
     }
 
     $output->write('<fg=yellow>Controller ' . $input->getArgument('name') . '</>');
-    $this->declareController(Application::getBaseDir(), $input->getArgument('name'), $project);
-    $this->createConfigFile(Application::getBaseDir(), $input->getArgument('name'));
-    $this->createController($appDir, $input->getArgument('name'), $project);
-    $this->createTemplateFolder(Application::getBaseDir(), $input->getArgument('name'));
+    $this->declareController($input->getArgument('name'), $project);
+    $this->createConfigFile($input->getArgument('name'));
+    $this->createController($input->getArgument('name'), $project);
+    $this->createTemplateFolder($input->getArgument('name'));
     $output->writeln('<fg=green> created.</>');
   }
 }
