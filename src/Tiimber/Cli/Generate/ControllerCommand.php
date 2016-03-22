@@ -2,7 +2,7 @@
 
 namespace Tiimber\Cli\Generate;
 
-use stdClass;
+use Exception;
 
 use Tiimber\Cli\Application;
 
@@ -11,7 +11,6 @@ use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
-use Symfony\Component\Console\Event\ConsoleExceptionEvent;
 
 class ControllerCommand extends Command
 {
@@ -36,9 +35,9 @@ class ControllerCommand extends Command
 
   private function createController($dir, $name, $project = null)
   {
-    $controllerDir = $appDir . DIRECTORY_SEPARATOR . $project . DIRECTORY_SEPARATOR . 'Controllers' . DIRECTORY_SEPARATOR;
+    $controllerDir = $dir . $project . DIRECTORY_SEPARATOR . 'Controllers' . DIRECTORY_SEPARATOR;
 
-    $controllerContent = <<<OEF
+    $controllerContent = <<<'EOS'
 <?php
 
 namespace {{project}}\Controllers;
@@ -49,9 +48,10 @@ class {{controller}}Controller extends AbstractController
 {
 
 }
-OEF;
+
+EOS;
     $controllerContent = str_replace(['{{project}}', '{{controller}}'], [$project, ucfirst($name)], $controllerContent);
-    file_put_contents($controllerDir, $controllerContent . ucfirst($name) . 'Controller.php');
+    file_put_contents($controllerDir . ucfirst($name) . 'Controller.php', $controllerContent);
   }
 
   private function createTemplateFolder($dir, $name)
@@ -69,10 +69,10 @@ OEF;
 
   private function declareController($dir, $controller, $project)
   {
-    $filePath = $dir .DIRECTORY_SEPARATOR . config . DIRECTORY_SEPARATOR . 'controllers.json';
+    $filePath = $dir .DIRECTORY_SEPARATOR . 'Config' . DIRECTORY_SEPARATOR . 'controllers.json';
     $content = json_decode(file_get_contents($filePath));
     if (isset($content->$controller)) {
-      throw new ConsoleExceptionEvent('Controller already declared');
+      throw new Exception('Controller already declared');
     }
     $content->$controller = $project . '\\Controllers\\' . ucfirst($controller);
     file_put_contents($filePath, json_encode($content, JSON_OPTIONS));
@@ -103,11 +103,11 @@ OEF;
       }
     }
 
+    $output->write('<fg=yellow>Controller ' . $input->getArgument('name') . '</>');
     $this->declareController(Application::getBaseDir(), $input->getArgument('name'), $project);
     $this->createConfigFile(Application::getBaseDir(), $input->getArgument('name'));
     $this->createController($appDir, $input->getArgument('name'), $project);
     $this->createTemplateFolder(Application::getBaseDir(), $input->getArgument('name'));
-
-    $output->writeln('<fg=green>Controller ' . $input->getArgument('name') . ' created.</>');
+    $output->writeln('<fg=green> created.</>');
   }
 }

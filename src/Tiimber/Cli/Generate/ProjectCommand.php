@@ -102,7 +102,7 @@ class ProjectCommand extends Command
 
   private function createIndex($dir)
   {
-    $content = <<<OEF
+    $content = <<<'EOS'
 <?php
 
 require __DIR__.'/vendor/autoload.php';
@@ -111,7 +111,8 @@ $application = new \Tiimber\Application();
 
 $application->setBaseDir(__DIR__);
 $application->start();
-OEF;
+
+EOS;
     file_put_contents($dir . DIRECTORY_SEPARATOR . 'index.php', $content);
   }
 
@@ -119,14 +120,25 @@ OEF;
   {
     $dir = Application::getBaseDir();
 
+    $output->write('<fg=yellow>Project structure</>');
     $this->createFolders($dir, $input->getArgument('name'));
+    $output->writeln('<fg=green> created.</>');
 
+    $output->write('<fg=yellow>Project config</>');
     $this->createConfig($dir, $input->getArgument('name'));
+    $output->writeln('<fg=green> created.</>');
 
-    $this->updateComposer($dir, $input->getArgument('name'));
 
+    $output->write('<fg=yellow>Project index</>');
     $this->createIndex($dir);
+    $output->writeln('<fg=green> created.</>');
+    
+    $output->write('<fg=yellow>composer.json</>');
+    $this->updateComposer($dir, $input->getArgument('name'));
+    $output->writeln('<fg=green> updated.</>');
 
-    $output->writeln('<fg=green>Project ' . $input->getArgument('name') . ' created.</>');
+
+    $output->writeln('<fg=green>Project ' . $input->getArgument('name') . ' successfully generated.</>');
+    $output->writeln('<fg=yellow>Now run "composer dump-autoload" to update autoloader.</>');
   }
 }
