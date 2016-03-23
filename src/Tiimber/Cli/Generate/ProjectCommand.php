@@ -11,6 +11,7 @@ use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
+use Symfony\Component\Console\Question\ConfirmationQuestion;
 
 class ProjectCommand extends Command
 {
@@ -18,7 +19,7 @@ class ProjectCommand extends Command
   {
     $this
       ->setName('generate:project')
-      ->setDescription('Tiimber project generation')
+      ->setDescription('Tiimber project generator')
       ->addArgument(
         'name',
         InputArgument::REQUIRED,
@@ -33,7 +34,7 @@ class ProjectCommand extends Command
     $resourceDir = (new PathResolver())->getResourceDir();
 
     mkdir((new PathResolver())->getAppDir());
-    
+
     mkdir($appDir);
     mkdir($appDir . 'Controllers');
     mkdir($appDir . 'Models');
@@ -52,10 +53,10 @@ class ProjectCommand extends Command
 
     touch($resourceDir . 'images' . DIRECTORY_SEPARATOR . '.gitkeep');
     touch($resourceDir . 'javascript' . DIRECTORY_SEPARATOR . '.gitkeep');
-    touch($resourceDir . 'stylesheet' . DIRECTORY_SEPARATOR . '.gitkeep');
+    touch($resourceDir . 'stylesheet' . DIRECTORY_SEPARATOR . 'application.css');
 
     mkdir((new PathResolver())->getTplDir());
-    touch((new PathResolver())->getTplDir() . DIRECTORY_SEPARATOR . '.gitkeep');
+    mkdir((new PathResolver())->getLayoutDir());
   }
 
   private function createConfig($name)
@@ -69,7 +70,10 @@ class ProjectCommand extends Command
       'password' => ''
     ];
     $helpers = [
-      'url' => 'Tiimber\\Helpers\\UrlHelper'
+      'url' => 'Tiimber\\Helpers\\UrlHelper',
+      'stylesheet' => 'Tiimber\\Helpers\\StylesheetHelper',
+      'javascript' => 'Tiimber\\Helpers\\JavascriptHelper',
+      'image' => 'Tiimber\\Helpers\\ImageHelper'
     ];
 
     file_put_contents($confiDir . 'database.json', json_encode($database, JSON_OPTIONS));
@@ -100,6 +104,24 @@ class ProjectCommand extends Command
     file_put_contents($composerPath, json_encode($composer, JSON_OPTIONS));
   }
 
+  private function createDefaultLayout()
+  {
+    $content = <<<'EOS'
+<html>
+  <head>
+    <title>Tiimber project</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" maximum-scale="1">
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="<?= $this->stylesheet('application.css') ?>">
+  </head>
+  <boby>
+    <?= $content ?>
+  </body>
+</html>
+EOS;
+    file_put_contents((new PathResolver())->getLayoutDir() . 'default.phtml', $content);
+  }
+
   private function createIndex()
   {
     $content = <<<'EOS'
@@ -120,23 +142,35 @@ EOS;
   {
     $output->write('<fg=yellow>Project structure</>');
     $this->createFolders($input->getArgument('name'));
+    $this->createDefaultLayout();
     $output->writeln('<fg=green> created.</>');
 
     $output->write('<fg=yellow>Project config</>');
     $this->createConfig($input->getArgument('name'));
     $output->writeln('<fg=green> created.</>');
 
-
     $output->write('<fg=yellow>Project index</>');
     $this->createIndex();
     $output->writeln('<fg=green> created.</>');
-    
-    $output->write('<fg=yellow>composer.json</>');
-    $this->updateComposer($input->getArgument('name'));
-    $output->writeln('<fg=green> updated.</>');
+
+    $helper = $this->getHelper('question');
+    $question = new ConfirmationQuestion('<fg=yellow>Add project namespace to composer.json [y]: </>', true);
+
+    $updateComposer = $helper->ask($input, $output, $question);
+    if ($updateComposer) {
+      $output->write('<fg=yellow>composer.json</>');
+      $this->updateComposer($input->getArgument('name'));
+      $output->writeln('<fg=green> updated.</>');
+    }
 
 
     $output->writeln('<fg=green>Project ' . $input->getArgument('name') . ' successfully generated.</>');
-    $output->writeln('<fg=yellow>Now run "composer dump-autoload" to update autoloader.</>');
+    $output->writeln('');
+    $output->writeln('<fg=yellow>Whats next:</>');
+    if ($updateComposer) {
+      $output->writeln('<fg=yellow>  - Run </><fg=white;bg=black;options=bold>composer dump-autoload</><fg=yellow> to update autoloader.</>');
+    }
+    $output->writeln('<fg=yellow>  - Run </><fg=white;bg=black;options=bold>vendor/bin/tiimber generate:controller <name></><fg=yellow> to generate your first controller.</>');
+    $output->writeln('');
   }
 }

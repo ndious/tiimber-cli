@@ -18,7 +18,7 @@ class ControllerCommand extends Command
   {
     $this
       ->setName('generate:controller')
-      ->setDescription('Tiimber controller generation')
+      ->setDescription('Tiimber controller generator')
       ->addArgument(
         'name',
         InputArgument::REQUIRED,

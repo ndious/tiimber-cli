@@ -14,7 +14,7 @@ class PathResolver
 
     return $dir;
   }
-  
+
   public function resolveProjectName()
   {
     $appDir = $this->getAppDir();
@@ -25,34 +25,39 @@ class PathResolver
       }
     }
   }
-  
+
   public function getRootDir()
   {
     Application::getBaseDir() . DIRECTORY_SEPARATOR;
   }
-  
+
   public function getAppDir()
   {
     return Application::getBaseDir() . DIRECTORY_SEPARATOR . 'Application' . DIRECTORY_SEPARATOR;
   }
-  
+
   public function getTplDir()
   {
     return Application::getBaseDir() . DIRECTORY_SEPARATOR . 'Templates' . DIRECTORY_SEPARATOR;
   }
-  
+
   public function getConfDir()
   {
     return Application::getBaseDir() . DIRECTORY_SEPARATOR . 'Config' . DIRECTORY_SEPARATOR;
   }
-  
+
   public function getRouteDir()
   {
     return $this->getConfDir() . 'routes' . DIRECTORY_SEPARATOR;
   }
-  
+
   public function getResourceDir()
   {
     return Application::getBaseDir() . DIRECTORY_SEPARATOR . 'Resources' . DIRECTORY_SEPARATOR;
+  }
+
+  public function getLayoutDir()
+  {
+    return $this->getTplDir() . DIRECTORY_SEPARATOR . 'Layouts' . DIRECTORY_SEPARATOR;
   }
 }
