@@ -21,8 +21,7 @@
     "autoload": {
         "psr-4": {
             "Tiimber\\Cli\\": "src/Tiimber/Cli/",
-            "Tiimber\\Cli\\Test\\": "tests/",
-            "Coucou\\": "Application/Coucou"
+            "Tiimber\\Cli\\Test\\": "tests/"
         }
     },
     "minimum-stability": "stable"
