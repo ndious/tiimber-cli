@@ -74,7 +74,7 @@ EOS;
     if (isset($content->$controller)) {
       throw new Exception('Controller already declared');
     }
-    $content->$controller = $project . '\\Controllers\\' . ucfirst($controller);
+    $content->$controller = $project . '\\Controllers\\' . ucfirst($controller) . 'Controller';
     file_put_contents($filePath, json_encode($content, JSON_OPTIONS));
   }
 

@@ -52,7 +52,7 @@ class RouteCommand extends Command
 
     $helper = $this->getHelper('question');
     $route = [
-      'url' => $this->askForUrl($helper, $input, $output),
+      'route' => $this->askForUrl($helper, $input, $output),
       'controller' => $input->getArgument('controller'),
       'action' => $input->getArgument('action'),
       'layout' =>  $this->askForLayout($helper, $input, $output)
