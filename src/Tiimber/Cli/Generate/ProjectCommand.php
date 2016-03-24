@@ -57,6 +57,9 @@ class ProjectCommand extends Command
 
     mkdir((new PathResolver())->getTplDir());
     mkdir((new PathResolver())->getLayoutDir());
+
+    mkdir((new PathResolver())->getRootDir() . 'Log');
+    touch((new PathResolver())->getRootDir() . 'Log' . DIRECTORY_SEPARATOR . 'log.txt');
   }
 
   private function createConfig($name)
@@ -72,8 +75,7 @@ class ProjectCommand extends Command
     $helpers = [
       'url' => 'Tiimber\\Helpers\\UrlHelper',
       'stylesheet' => 'Tiimber\\Helpers\\StylesheetHelper',
-      'javascript' => 'Tiimber\\Helpers\\JavascriptHelper',
-      'image' => 'Tiimber\\Helpers\\ImageHelper'
+      'javascript' => 'Tiimber\\Helpers\\JavascriptHelper'
     ];
 
     file_put_contents($confiDir . 'database.json', json_encode($database, JSON_OPTIONS));
@@ -112,7 +114,7 @@ class ProjectCommand extends Command
     <title>Tiimber project</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0" maximum-scale="1">
     <meta charset="UTF-8">
-    <link rel="stylesheet" href="<?= $this->stylesheet('application.css') ?>">
+    <?= $this->stylesheet('application.css') ?>
   </head>
   <boby>
     <?= $content ?>
