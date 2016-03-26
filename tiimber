@@ -17,4 +17,5 @@ $application->setBaseDir(__DIR__);
 $application->add(new Generate\ProjectCommand());
 $application->add(new Generate\ControllerCommand());
 $application->add(new Generate\RouteCommand());
+$application->add(new Generate\EntityCommand());
 $application->run();

@@ -12,16 +12,15 @@ use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
-use Symfony\Component\Console\Question\Question;
-use Symfony\Component\Console\Question\ConfirmationQuestion;
-use Symfony\Component\Console\Question\ChoiceQuestion;
 
-class RouteCommand extends Command
+use Doctrine\Common\Inflector\Inflector;
+
+class EntityCommand extends Command
 {
   protected function configure()
   {
     $this
-      ->setName('generate:route')
+      ->setName('generate:entity')
       ->setDescription('Tiimber route generator')
       ->addArgument(
         'name',
@@ -45,10 +44,78 @@ class RouteCommand extends Command
 
   protected function execute(InputInterface $input, OutputInterface $output)
   {
+    $model = $input->getArgument('name');
+    $pluralized = Inflector::pluralize($model);
+    $project = $input->getOption('project');
+    if (is_null($project)) {
+      $project = (new PathResolver)->resolveProjectName();
+    }
 
+    $this->generateModel($project, $model);
+    $this->generateTable($project, $model, $pluralized);
+
+    if ($input->getOption('rest')) {
+      $this->generateController($project, $pluralized);
+      $this->generateRoutes($model, $pluralized);
+      $this->declareController($pluralized, $project);
+    }
   }
 
-  private function generateController($model)
+  private function generateModel($project, $model)
+  {
+    $dir = (new PathResolver())->getAppDir() . $project . DIRECTORY_SEPARATOR . 'Models' . DIRECTORY_SEPARATOR;
+
+    $content = <<<'EOS'
+<?php
+
+namespace {{project}}\Models;
+
+use Tiimber\AbstractModel;
+
+class {{model}} extends AbstractModel
+{
+}
+
+EOS;
+
+    $content = str_replace(
+      ['{{project}}', '{{model}}'],
+      [$project, ucfirst($model)],
+      $content
+    );
+
+    file_put_contents($dir . ucfirst($model) . '.php', $content);
+  }
+
+  private function generateTable($project, $model, $table)
+  {
+    $dir = (new PathResolver())->getAppDir() . $project . DIRECTORY_SEPARATOR . 'Tables' . DIRECTORY_SEPARATOR;
+    $content = <<<'EOS'
+<?php
+
+namespace {{project}}\Tables;
+
+use Tiimber\AbstractTable;
+
+class {{Table}}Table extends AbstractTable
+{
+  const TABLE = '{{table}}';
+
+  const ENTITY = 'Takaclic\Models\{{model}}';
+}
+
+EOS;
+
+    $content = str_replace(
+      ['{{project}}', '{{table}}', '{{Table}}', '{{model}}'],
+      [$project, $table, ucfirst($table), ucfirst($model)],
+      $content
+    );
+
+    file_put_contents($dir . ucfirst($table) . 'Table.php', $content);
+  }
+
+  private function generateController($project, $table)
   {
     $content = <<<'EOS'
 <?php
@@ -57,9 +124,9 @@ namespace {{project}}\Controllers;
 
 use Tiimber\AbstractRestController;
 
-use {{project}}\Tables\{{model}}Table as Table;
+use {{project}}\Tables\{{table}}Table as Table;
 
-class {{model}}Controller extends AbstractRestController
+class {{table}}Controller extends AbstractRestController
 {
   public function getTable()
   {
@@ -68,15 +135,24 @@ class {{model}}Controller extends AbstractRestController
 }
 
 EOS;
+
+    $content = str_replace(
+      ['{{project}}', '{{table}}'],
+      [$project, ucfirst($table)],
+      $content
+    );
+
+    $dir = (new PathResolver())->getAppDir() . $project . DIRECTORY_SEPARATOR . 'Controllers' . DIRECTORY_SEPARATOR;
+    file_put_contents($dir . ucfirst($table) . 'Controller.php', $content);
   }
 
-  private function generateRoutes($model)
+  private function generateRoutes($model, $controller)
   {
     $routes = [
       'api_' . $model . '_get_collection' => [
         'route' => 'get::/api/v1/' .  $model,
         'action' => 'apiGetCollection',
-        'controller' => $model,
+        'controller' => $controller,
         'layout' => 'blank'
       ],
       'api_' . $model . '_get' => [
@@ -85,13 +161,13 @@ EOS;
           'id' => '\d+'
         ],
         'action' => 'apiGet',
-        'controller' => $model,
+        'controller' => $controller,
         'layout' => 'blank'
       ],
       'api_' . $model . '_create' => [
         'route' => 'post::/api/v1/' .  $model,
         'action' => 'apiCreate',
-        'controller' => $model,
+        'controller' => $controller,
         'layout' => 'blank'
       ],
       'api_' . $model . '_update' => [
@@ -100,7 +176,7 @@ EOS;
           'id' => '\d+'
         ],
         'action' => 'apiUpdate',
-        'controller' => $model,
+        'controller' => $controller,
         'layout' => 'blank'
       ],
       'api_' . $model . '_delete' => [
@@ -109,9 +185,24 @@ EOS;
           'id' => '\d+'
         ],
         'action' => 'apiDelete',
-        'controller' => $model,
+        'controller' => $controller,
         'layout' => 'blank'
       ]
     ];
+
+    $filePath = (new PathResolver())->getRouteDir() . $controller . '.json';
+
+    file_put_contents($filePath, json_encode($routes, JSON_OPTIONS));
+  }
+
+  private function declareController($controller, $project)
+  {
+    $filePath = (new PathResolver())->getConfDir() . 'controllers.json';
+    $content = json_decode(file_get_contents($filePath));
+    if (isset($content->$controller)) {
+      throw new Exception('Controller already declared');
+    }
+    $content->$controller = $project . '\\Controllers\\' . ucfirst($controller) . 'Controller';
+    file_put_contents($filePath, json_encode($content, JSON_OPTIONS));
   }
 }
