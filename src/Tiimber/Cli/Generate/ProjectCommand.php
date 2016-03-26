@@ -131,10 +131,10 @@ EOS;
 
 require __DIR__.'/vendor/autoload.php';
 
-$application = new \Tiimber\Application();
+$tiimber = new \Tiimber\Application();
 
-$application->setBaseDir(__DIR__);
-$application->start();
+$tiimber->setRoot(__DIR__);
+$tiimber->chop();
 
 EOS;
     file_put_contents((new PathResolver())->getRootDir() . 'index.php', $content);
