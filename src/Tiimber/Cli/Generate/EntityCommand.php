@@ -101,7 +101,7 @@ class {{Table}}Table extends AbstractTable
 {
   const TABLE = '{{table}}';
 
-  const ENTITY = 'Takaclic\Models\{{model}}';
+  const ENTITY = '{{project}}\Models\{{model}}';
 }
 
 EOS;
