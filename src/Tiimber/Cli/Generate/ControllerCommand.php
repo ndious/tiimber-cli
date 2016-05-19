@@ -103,5 +103,15 @@ EOS;
     $this->createController($input->getArgument('name'), $project);
     $this->createTemplateFolder($input->getArgument('name'));
     $output->writeln('<fg=green> created.</>');
+    
+    $output->writeln('');
+    $output->writeln('<fg=white;bg=blue>Whats next:</>');
+    $output->writeln('   -First, create your action in your new controller, like :');
+    $output->writeln('       <fg=blue>public function</> nameOfAction<fg=red>Action</>() {');
+    $output->writeln('          return $this->render();');
+    $output->writeln('        }');
+    $output->writeln('');
+    $output->writeln('  - After that, run <fg=white;bg=black;options=bold>vendor/bin/tiimber generate:route <controller> <action></>to generate your first route.');
+    $output->writeln('');
   }
 }
