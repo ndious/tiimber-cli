@@ -62,9 +62,12 @@ class RouteCommand extends Command
     if ($security) {
       $route['security'] = $security;
     }
-
+    $output->write('<fg=yellow>Route </>"' . $route['route'] . '"');
     $this->writeRoute($input->getArgument('controller'), $input->getArgument('action'), $route);
+    $output->writeln('<fg=green> created</>');
+    $output->write('<fg=yellow>Template</> "' . $route['action'] . '.phtml"');
     $this->createTemplate($input->getArgument('controller'), $input->getArgument('action'));
+    $output->write('<fg=green> created</>');
   }
 
   private function testRequirement(InputInterface $input)
@@ -95,7 +98,14 @@ class RouteCommand extends Command
 
   private function askForUrl($helper, $input, $output)
   {
-    $question = new Question('<fg=yellow>Route url: </>', '');
+    $controller = strtolower($input->getArgument('controller'));
+    $action = strtolower($input->getArgument('action'));
+    
+    $bundles = array($controller, '/'.$controller, $action, '/'.$action);
+    
+    $question = new Question('<fg=yellow>Enter route url: </>', '');
+    $question->setAutocompleterValues($bundles);
+    
     $question->setValidator(function ($answer) {
       if ('/' !== substr($answer, 0, 1)) {
         throw new \RuntimeException('The route may start with "/"');

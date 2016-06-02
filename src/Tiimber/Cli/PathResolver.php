@@ -8,7 +8,7 @@ class PathResolver
 {
   public function resolve($dir)
   {
-    if (strpos($dir, 'vendor/ndufreche/tiimber-cli')) {
+    if (strpos($dir, 'vendor'.DIRECTORY_SEPARATOR.'ndufreche'.DIRECTORY_SEPARATOR.'tiimber-cli')) {
       $dir = dirname(dirname(dirname($dir)));
     }
 
